@@ -79,175 +79,47 @@ Workbox is installed, but you're not using it in your gulp build process, yet.
 
     <pre class="prettyprint">var gulp = require('gulp'),
         del = require('del'),
-        run = require('run-sequence'),
+        runSequence = require('run-sequence'),
         <strong>workbox = require('workbox-build');</strong>
     </pre>
 
-1. Call Workbox as the last step in your build process.
+1. Add a task to generate your service worker using Workbox.
 
     <pre class="prettyprint"><strong>gulp.task('generate-service-worker', () => {
       return workbox.generateSW({
         globDirectory: './dist/',
+        globPatterns: ['\*\*\/\*.{html,js,css}'],
         swDest: './dist/sw.js',
-        globPatterns: ['\*\*\/\*.{html,js,css}']
+        clientsClaim: true,
+        skipWaiting: true
       }).then(() => {
         console.info('Service worker generation completed.');
       }).catch((error) => {
         console.warn('Service worker generation failed: ' + error);
       });
-    });</strong>
+    });</strong></pre>
+
+1. Call the Workbox task as the last step in your build process.
     
-    gulp.task('default', function () {
-      <strong>// Always call Workbox last.</strong>
-      run('clean', 'build', <strong>'generate-service-worker'</strong>);
+    <pre class="prettyprint">gulp.task('default', function () {
+      runSequence('clean', 'build', <strong>'generate-service-worker'</strong>);
     });</pre>
 
 ### Optional: How the config works {: #optional-config }
 
-`webpack.config.js` determines how the app is built.
+`gulpfile.js` determines how the app is built.
 
-* `cleanPlugin` deletes `dist`, which is the path to the output directory.
-* `htmlPlugin` re-generates the HTML output and places it back in `dist`.
-* `workboxPlugin` inspects the contents of `dist` and generates
-  service worker code for caching the output. Since Workbox revisions
-  each file based on its contents, Workbox should always be the last
-  plugin you call.
+* The `clean` task deletes the output directory.
+* The `build` task builds the app. In this case, it just copies the source files to the output
+  directory.
+* The `generate-service-worker` task creates your service worker code, using Workbox.
+* The `default` task is the master task that choreographs all of the sub-tasks.
 
-The object that you pass to `workboxPlugin` configures how Workbox runs.
+The object that you pass to `workbox.generateSW()` configures how Workbox runs.
 
-* `globDirectory` is where Workbox watches for changes. `globPatterns`
-  is relative to this directory.
+<<_shared/config.md>>
 
-    <aside class="note">**Note**: A glob is a wildcard pattern. See [Glob Primer][Glob] to
-    learn more.</aside>
-
-[Glob]: https://github.com/isaacs/node-glob#glob-primer
-
-* `globPatterns` is a glob of what files to precache. In plain English, the
-  wildcard pattern `**/*.{html,js}` translates to "cache every HTML and JS
-  file in `globDirectory`, or any of its sub-directories".
-* `swDest` is where Workbox outputs the service worker that it generates.
-* `clientsClaim` instructs the latest service worker to take control of all
-  clients as soon as it's activated. See [clients.claim][claim].
-* `skipWaiting` instructs the latest service worker to activate as soon as it enters
-  the waiting phase. See [Skip the waiting phase][skip].
-
-[skip]: /web/fundamentals/primers/service-workers/lifecycle#skip_the_waiting_phase
-[claim]: /web/fundamentals/primers/service-workers/lifecycle#clientsclaim
-
-## Step 4: Register and inspect the generated service worker {: #register }
-
-Workbox has generated a service worker, but there's no reference to it from
-your app, yet.
-
-1. Click `src/index.js` to open that file.
-1. Register your service worker at the bottom of `init()`.
-
-    <pre class="prettyprint">function init() {
-      let title = document.createElement('h1');
-      title.textContent = 'Top 10 Hacker News Stories';
-      document.body.appendChild(title);
-      let list = document.createElement('ol');
-      document.body.appendChild(list);
-      fetchTop10().then(stories => renderTop10(stories));
-      <strong>if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('SW registered: ', registration);
-          }).catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-          });
-        });
-      }</strong>
-    }</pre>
-
-1. Re-focus the tab that's running the live version of your app.
-1. Click the **Application** tab of DevTools.
-1. Click the **Service Workers** tab.
-
-     <figure>
-       <img src="/web/tools/workbox/get-started/imgs/webpack/sw-pane.png"
-         alt="The Service Workers pane"/>
-       <figcaption>
-         <b>Figure 6</b>. The Service Workers pane
-       </figcaption>
-     </figure>
-
-1. Click **sw.js**, next to **Source**. DevTools displays the
-   service worker code that Workbox generated. It should look close to this:
-
-     <figure>
-       <img src="/web/tools/workbox/get-started/imgs/webpack/sources.png"
-         alt="The generated service worker code"/>
-       <figcaption>
-         <b>Figure 7</b>. The generated service worker code
-       </figcaption>
-     </figure>
-
-### Try out the offline-capable app {: #try-incomplete }
-
-Your app now sort-of works offline. Try it now:
-
-1. In the live version of your app, use DevTools to go offline again.
-   Focus DevTools and press <kbd>Command</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
-   (Mac) or <kbd>Control</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (Windows, Linux)
-   to open the **Command Menu**. Type `Offline`, select **Go offline**,
-   then press <kbd>Enter</kbd>.
-1. Reload the page. The title of the page appears, but the list of the top
-   10 stories doesn't.
-1. Click the **Network** tab in DevTools. The request for `topstories.json` is
-   red, meaning that it failed. This is why the list isn't appearing. The app
-   tries to make a request for
-   `https://hacker-news.firebaseio.com/v0/topstories.json`, but the request
-   fails since you're offline and you haven't instructed Workbox to cache
-   this resource, yet.
-
-     <figure>
-       <img src="/web/tools/workbox/get-started/imgs/webpack/offline-capable.png"
-         alt="The incomplete offline experience"/>
-       <figcaption>
-         <b>Figure 8</b>. The incomplete offline experience
-       </figcaption>
-     </figure>
-
-1. Use the **Command Menu** in DevTools to go back online.
-
-### Optional: How the service worker code works {: #optional-generated }
-
-The service worker code is generated based on the configuration that you
-provide in `webpack.config.js`.
-
-* `importScripts('workbox-sw.prod.v2.1.0.js')` imports Workbox's service
-  worker library. You can inspect this file from the **Sources** panel of
-  DevTools.
-
-    <figure>
-      <img src="/web/tools/workbox/get-started/imgs/webpack/lib-src.png"
-        alt="The code for Workbox's service worker library"/>
-      <figcaption>
-        <b>Figure 9</b>. The code for Workbox's service worker library
-      </figcaption>
-    </figure>
-
-* The `fileManifest` array lists all of the resources that Workbox is
-  precaching. This list is determined by the `globDirectory`
-  and `globPatterns` properties that you define in `webpack.config.js`, as
-  mentioned in the last section.
-* Each resource has a `revision` property. This is how Workbox determines
-  when to update a resource. Each time you build your app, Workbox generates
-  a hash based on the contents of the resource. If the contents change, then
-  the `revision` hash changes.
-* When the service worker runs, it writes the `url` and `revision` of each
-  resource to [IndexedDB][IDB] (IDB) if it doesn't exist. If the resource does
-  exist, the service worker checks that the `revision` in its code matches the
-  `revision` in IDB. If the hashes don't match, then the resource has changed,
-  and therefore the service worker needs to download the updated resource and
-  update the hash in IDB.
-
-In sum, Workbox only re-downloads resources when they change, and ensures
-that your app always caches the most up-to-date version of each resource.
-
-[IDB]: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+<<_shared/register.md>>
 
 ## Step 5: Add runtime caching {: #runtime }
 
@@ -396,7 +268,8 @@ The app is now all set to handle push notifications. Try it now:
 
 1. Re-focus the tab running the live version of your app.
 1. Click **Allow** when Chrome asks you if you want to grant the app
-   permission to send push notifications.
+   permission to send push notifications. If you don't see the prompt, make sure you're online
+   and then reload the page.
 1. Go to back to the **Service Workers** tab in DevTools.
 1. Enter some text into the **Push** text box, then click **Push**. Your operating system
    displays a push notification from the app.
