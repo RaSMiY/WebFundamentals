@@ -154,82 +154,8 @@ that they had an internet connection.
 
 <<_shared/try-complete.md>>
 
-## Step 6: Create your own service worker {: #inject }
+<<_shared/create.md>>
 
-Up until now, you've been letting Workbox generate your entire service
-worker. If you've got a big project, or you want to customize how you cache
-certain resources, or do custom logic in your service worker, such as add
-support for push notifications, which you're going to add in this section,
-then you need to create a custom service worker that calls Workbox instead.
-Think of the service worker code you write as a template. You write your custom logic with
-placeholder keywords that instruct Workbox where to inject its code.
-
-1. Re-focus the tab containing your project source code.
-1. Open `package.json`.
-1. Click **Add Package**, type `workbox-sw`, then click on the matching package to install
-   that library.
-1. Write down the version number of `workbox-sw` that gets installed. You'll
-   need it later.
-1. Add the following line of code to the `init()` function in `app.js`.
-
-    <pre class="prettyprint">function init() {
-      let title = document.createElement('h1');
-      title.textContent = 'Top 10 Hacker News Stories';
-      document.body.appendChild(title);
-      let list = document.createElement('ol');
-      document.body.appendChild(list);
-      fetchTop10().then(stories => renderTop10(stories));
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('SW registered: ', registration);
-            <strong>registration.pushManager.subscribe({userVisibleOnly: true});</strong>
-          }).catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-          });
-        });
-      }
-    }</pre>
-
-    <aside class="warning">**Warning**: For simplicity, this demo asks for permission to
-    send push notifications as soon as the service worker is registered. Best practices
-    strongly recommend against out-of-context permission requests like this in real apps.
-    See [Permission UX][UX].</aside>
-
-[UX]: /web/fundamentals/push-notifications/permission-ux
-
-1. Click **New File**, enter `src/sw.js`, then press <kbd>Enter</kbd>.
-1. Insert the following code into `src/sw.js`.
-
-    <pre class="prettyprint"><strong>// TODO: Replace Xs.
-    importScripts('/node_modules/workbox-sw/build/importScripts/workbox-sw.prod.vX.X.X.js');
-    
-    // Note: Ignore the error that Glitch raises about WorkboxSW being undefined.
-    const workbox = new WorkboxSW({
-      skipWaiting: true,
-      clientsClaim: true
-    });
-    
-    workbox.router.registerRoute(
-      new RegExp('^https://hacker-news.firebaseio.com'),
-      workbox.strategies.staleWhileRevalidate()
-    );
-    
-    self.addEventListener('push', (event) => {
-      const title = 'Get Started With Workbox For Webpack';
-      const options = {
-        body: event.data.text()
-      };
-      event.waitUntil(self.registration.showNotification(title, options));
-    });
-
-    workbox.precache([]);</strong></pre>
-
-    <aside class="important">**Important**: `workbox.precache([])` is a placeholder keyword.
-    At build-time, Workbox injects the list of files to cache into the array.</aside>
-
-1. Replace each `X` in `importScripts('.../workbox-sw.prod.vX.X.X.js')` with
-   the version number of `workbox-sw` in `package.json` that you noted earlier.
 1. Open `webpack.config.json`.
 1. Remove the `runtimeCaching`, `clientsClaim`, and `skipWaiting` properties from your Workbox
    plugin configuration. These are now handled in your service worker code.
@@ -243,45 +169,4 @@ placeholder keywords that instruct Workbox where to inject its code.
       swDest: path.join(dist, 'sw.js')
     })</pre>
 
-### Try out push notifications {: #try-push }
-
-The app is now all set to handle push notifications. Try it now:
-
-1. Re-focus the tab running the live version of your app.
-1. Click **Allow** when Chrome asks you if you want to grant the app
-   permission to send push notifications.
-1. Go to back to the **Service Workers** tab in DevTools.
-1. Enter some text into the **Push** text box, then click **Push**. Your operating system
-   displays a push notification from the app.
-
-     <figure>
-       <img src="/web/tools/workbox/get-started/imgs/webpack/push.png"
-         alt="Simulating a push notification from DevTools"/>
-       <figcaption>
-         <b>Figure 11</b>. Simulating a push notification from DevTools
-       </figcaption>
-     </figure>
-
-    <aside class="note">**Note**: If you don't see the **Push** text box, you're running an older
-    version of Chrome. Click the **Push** link instead. DevTools sends a notification with the
-    text `Test push message from DevTools`.</aside>
-
-### Optional: How service worker injection works {: #optional-injection }
-
-At the bottom of your custom service worker, you call `workbox.precache([])`. This is a
-placeholder. At build-time, the Workbox plugin replaces the empty array with the list
-of resources to precache. Your Workbox plugin configuration in `webpack.config.json` still
-determines what resources get precached.
-
-## Next steps {: #next-steps }
-
-* Read the [Overview](/web/tools/workbox/overview) to learn more about the benefits that
-  Workbox can provide to your project and how Workbox works.
-* If you plan on building a custom service worker, it's helpful to understand [the service
-  worker lifecycle](/web/fundamentals/primers/service-workers/lifecycle). See [Service Workers:
-  An Introduction](/web/fundamentals/primers/service-workers/) to learn the basics of service
-  workers.
-* If you build projects with Workbox and run into questions or issues, [ask a question on
-  Stack Overflow and tag it with `workbox`][SO].
-
-[SO]: https://stackoverflow.com/questions/ask?tags=workbox
+<<_shared/end.md>>
