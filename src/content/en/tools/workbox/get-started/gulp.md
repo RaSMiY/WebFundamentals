@@ -77,19 +77,22 @@ Workbox is installed, but you're not using it in your gulp build process, yet.
 1. Click `gulpfile.js` to open that file.
 1. Import the Workbox plugin. The bold code is the code that you need to add to your project.
 
-    <pre class="prettyprint">var gulp = require('gulp'),
-        del = require('del'),
-        runSequence = require('run-sequence'),
+    <pre class="prettyprint">const gulp = require('gulp'),
+        ...
         <strong>workbox = require('workbox-build');</strong>
     </pre>
 
 1. Add a task to generate your service worker using Workbox.
 
-    <pre class="prettyprint"><strong>gulp.task('generate-service-worker', () => {
+    <pre class="prettyprint">gulp.task('build', () => {
+      ...
+    });
+
+    <strong>gulp.task('generate-service-worker', () => {
       return workbox.generateSW({
-        globDirectory: './dist/',
-        globPatterns: ['\*\*\/\*.{html,js,css}'],
-        swDest: './dist/sw.js',
+        globDirectory: dist,
+        globPatterns: ['\*\*\/\*.{html,js}'],
+        swDest: \`${dist}/sw.js\`,
         clientsClaim: true,
         skipWaiting: true
       }).then(() => {
@@ -97,7 +100,11 @@ Workbox is installed, but you're not using it in your gulp build process, yet.
       }).catch((error) => {
         console.warn('Service worker generation failed: ' + error);
       });
-    });</strong></pre>
+    });</strong>
+
+    gulp.task('default', () => {
+      ...
+    });</pre>
 
 1. Call the Workbox task as the last step in your build process.
     
@@ -113,7 +120,8 @@ Workbox is installed, but you're not using it in your gulp build process, yet.
 * The `build` task builds the app. In this case, it just copies the source files to the output
   directory.
 * The `generate-service-worker` task creates your service worker code, using Workbox.
-* The `default` task is the master task that choreographs all of the sub-tasks.
+* The `default` task is the "master" task that ensures that all of the other tasks run in
+  the proper order.
 
 The object that you pass to `workbox.generateSW()` configures how Workbox runs.
 
@@ -140,11 +148,7 @@ that they had an internet connection.
 
     <pre class="prettyprint">gulp.task('generate-service-worker', () => {
       return workbox.generateSW({
-        globDirectory: './dist/',
-        globPatterns: ['\*\*\/\*.{html,js,css}'],
-        swDest: './dist/sw.js',
-        clientsClaim: true,
-        skipWaiting: true,
+        ...
         <strong>runtimeCaching: [
           {
             urlPattern: new RegExp('https://hacker-news\.firebaseio\.com'),
@@ -152,11 +156,7 @@ that they had an internet connection.
           }
         ]</strong>
       }).then(() => {
-        console.info('Service worker generation completed.');
-      }).catch((error) => {
-        console.warn('Service worker generation failed: ' + error);
-      });
-    });</pre>
+        ...</pre>
 
 
 [cookbook]: /web/fundamentals/instant-and-offline/offline-cookbook/
@@ -172,15 +172,17 @@ that they had an internet connection.
 
     <pre class="prettyprint">gulp.task('generate-service-worker', () => {
       return workbox.generateSW({
-        globDirectory: './dist/',
-        globPatterns: ['\*\*\/\*.{html,js,css}'],
-        <strong>swSrc: './src/sw.js',</strong>
-        swDest: './dist/sw.js'
+        globDirectory: dist,
+        globPatterns: ['\*\*\/\*.{html,js}'],
+        <strong>swSrc: \`${src}/sw.js\`,</strong>
+        swDest: \`${dist}/sw.js\`
       }).then(() => {
-        console.info('Service worker generation completed.');
-      }).catch((error) => {
-        console.warn('Service worker generation failed: ' + error);
-      });
-    });</pre>
+        ...</pre>
+
+1. Change `generateSW` to `injectManifest`.
+
+    <pre class="prettyprint">gulp.task('generate-service-worker', () => {
+      return workbox.<strong>injectManifest</strong>({
+        ...</pre>
 
 <<_shared/end.md>>

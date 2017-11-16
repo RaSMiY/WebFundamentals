@@ -17,19 +17,14 @@ placeholder keywords that instruct Workbox where to inject its code.
 1. Add the following line of code to the `init()` function in `app.js`.
 
     <pre class="prettyprint">function init() {
-      let title = document.createElement('h1');
-      title.textContent = 'Top 10 Hacker News Stories';
-      document.body.appendChild(title);
-      let list = document.createElement('ol');
-      document.body.appendChild(list);
-      fetchTop10().then(stories => renderTop10(stories));
+      ...
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {
             console.log('SW registered: ', registration);
             <strong>registration.pushManager.subscribe({userVisibleOnly: true});</strong>
           }).catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
+            ...
           });
         });
       }
@@ -60,7 +55,7 @@ placeholder keywords that instruct Workbox where to inject its code.
     );
     
     self.addEventListener('push', (event) => {
-      const title = 'Get Started With Workbox For Webpack';
+      const title = 'Get Started With Workbox';
       const options = {
         body: event.data.text()
       };

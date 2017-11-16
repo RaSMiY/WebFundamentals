@@ -1,5 +1,3 @@
-kayce man
-
 ## Step 4: Register and inspect the generated service worker {: #register }
 
 Workbox has generated a service worker, but there's no reference to it from
@@ -9,16 +7,7 @@ your app, yet.
 1. Register your service worker at the bottom of `init()`.
 
     <pre class="prettyprint">function init() {
-      let manifest = document.createElement('link');
-      manifest.rel = 'manifest';
-      manifest.href = '/manifest.json';
-      document.head.appendChild(manifest);
-      let title = document.createElement('h1');
-      title.textContent = 'Top 10 Hacker News Stories';
-      document.body.appendChild(title);
-      let list = document.createElement('ol');
-      document.body.appendChild(list);
-      fetchTop10().then(stories => renderTop10(stories));
+      ... 
       <strong>if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {
@@ -86,7 +75,7 @@ Your app now sort-of works offline. Try it now:
 
 The service worker code is generated based on your Workbox configuration.
 
-* `importScripts('workbox-sw.prod.v2.1.0.js')` imports Workbox's service
+* `importScripts('workbox-sw.prod.vX.X.X.js')` imports Workbox's service
   worker library. You can inspect this file from the **Sources** panel of
   DevTools.
 
